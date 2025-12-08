@@ -37,19 +37,17 @@ toc:
   - name: Background
     subsections:
       - name: Reasoning-Intensive Retrieval and BRIGHT
-      - name: The Compute Levers in Neural IR
+      - name: The IR Pipeline for RIIR
       - name: The "Thinking" Dimension
   - name: Experimental Setup
     subsections:
       - name: Model Suite
       - name: Evaluation Metrics
-      - name: Experiment Design
-        subsections:
-          - name: Scaling Compute in Query Expansion (QE)
-          - name: Scaling Compute in Reranking (RR)
-          - name: Increasing Reranking Depth (Top-k)
-          - name: Impact of "Thinking" in Reranking
-          - name: Impact of Model Strength in Reranking
+  - name: Experiments
+    subsections:
+      - name: Scaling Compute in Query Expansion (QE)
+      - name: Scaling Compute in Reranking (RR)
+  - name: Conclusion
 ---
 
 ## Introduction
