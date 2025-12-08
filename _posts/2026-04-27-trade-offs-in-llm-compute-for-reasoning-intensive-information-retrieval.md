@@ -2,7 +2,7 @@
 layout: distill
 title: Trade-offs in LLM Compute for Reasoning-Intensive Information Retrieval
 
-description: "Large Language Models have become essential for reasoning-intensive information retrieval, but their computational cost raises a critical question: where should compute be allocated for maximum effectiveness? Using the BRIGHT benchmark and the Gemini 2.5 model family, we systematically evaluate trade-offs across model strength, inference-time thinking depth, and reranking depth. Our controlled experiments reveal the marginal gains of investing compute in query expansion versus reranking, providing practical guidance for optimizing cost-performance in LLM-augmented retrieval pipelines."
+description: "The BRIGHT benchmark (ICLR 2025 Spotlight) revealed that reasoning-intensive information retrieval requires LLM-augmented pipelines, but this raises a critical resource allocation question: where should computational budget be invested for maximum effectiveness? We conduct a systematic study on BRIGHT using the Gemini 2.5 model family, evaluating trade-offs across model strength, inference-time thinking depth, and reranking depth. Our controlled experiments quantify the marginal gains of allocating compute to query expansion versus reranking, providing practical guidance for optimizing LLM-based retrieval systems on reasoning-intensive tasks."
 date: 2026-04-27
 future: true
 htmlwidgets: true
@@ -53,7 +53,12 @@ toc:
 ---
 
 ## Introduction
-The paradigm of Information Retrieval (IR) is undergoing a fundamental shift. While traditional IR focused on semantic similarity and keyword matching, modern applications increasingly demand Reasoning-Intensive Information Retrieval (RIIR). In these scenarios, as shown by the recent ICLR 2025 Spotlight paper BRIGHT - a system cannot simply find a document that looks like the query; it must understand complex logic, synthesize constraints, and deduce relationships to identify the correct evidence.
+
+<figure>
+  <img src="{{ '/assets/html/2026-04-27-trade-offs-in-llm-compute-for-reasoning-intensive-information-retrieval/riir-llm-tradeoff-overview.png' | relative_url }}" alt="LLM compute Trade-offs in RIIR" style="width: 100%; max-width: 600px; display: block; margin: 0 auto;">
+</figure>
+
+The paradigm of Information Retrieval (IR) is undergoing a fundamental shift. While traditional IR focused on semantic similarity and keyword matching, modern applications increasingly demand Reasoning-Intensive Information Retrieval (RIIR). In these scenarios, as shown by the recent ICLR 2025 Spotlight paper [BRIGHT](https://arxiv.org/abs/2407.12883)<d-cite key="su2025bright"></d-cite> - a system cannot simply find a document that looks like the query; it must understand complex logic, synthesize constraints, and deduce relationships to identify the correct evidence.
 
 The BRIGHT benchmark established that standard retrieval methods (both sparse and dense) struggle significantly with these tasks. However, it also highlighted a promising path forward: the integration of Large Language Models (LLMs) into the retrieval pipeline. Specifically, the paper demonstrated that Query Expansion (QE) and LLM-based Reranking (RR) are critical for boosting performance.
 
@@ -70,15 +75,15 @@ Our goal is to answer a practical question for system designers:
 
 ## Background
 ### Reasoning-Intensive Retrieval and BRIGHT
-Standard retrieval benchmarks (e.g., BEIR) often rely on lexical overlap or semantic proximity. In contrast, the BRIGHT benchmark consists of queries where the answer requires multi-hop reasoning or domain-specific logic that is not explicitly present in the query text. For example, a query might ask about a specific chemical property that implies a class of materials, requiring the retriever to identify documents discussing those materials without the explicit class name being present.
+Standard retrieval benchmarks (e.g., BEIR<d-cite key="thakur2021beir"></d-cite>) often rely on lexical overlap or semantic proximity. In contrast, the BRIGHT benchmark consists of queries where the answer requires multi-hop reasoning or domain-specific logic that is not explicitly present in the query text. For example, a query might ask about a specific chemical property that implies a class of materials, requiring the retriever to identify documents discussing those materials without the explicit class name being present.
 
 More formally, let $\mathcal{C}$ be a large corpus of documents and $q$ be a user query. In standard IR, relevance is often approximated by lexical overlap or semantic similarity. In RIIR, relevance is determined by a latent logic or reasoning requirement.
 
-We define a binary relevance function $Rel(q, d) \in \{0, 1\}$ provided by the dataset annotations. The objective is to retrieve the subset of relevant documents $\mathcal{D}^* = \{d \in \mathcal{C} \mid Rel(q, d) = 1\}$ and rank them at the top of the result list. Unlike factoid retrieval where a single document might suffice, RIIR tasks in BRIGHT often involve multiple relevant documents that must be identified based on implicit characteristics derived from $q$.
+We define a binary relevance function $Rel(q, d) \in \{0, 1\}$ provided by the dataset annotations. The objective is to retrieve the subset of relevant documents $\mathcal{D}^* = \{d \in \mathcal{C} \mid Rel(q, d) = 1\}$ and rank them at the top of the result list.
 
 ### The IR Pipeline for RIIR
 
-To address the complexity of RIIR, we utilize a multi-stage pipeline. The process generally follows a "retrieve-then-rerank" architecture augmented by LLMs.
+To address the complexity of RIIR, BRIGHT paper suggests a multi-stage pipeline. The process generally follows a "retrieve-then-rerank" architecture augmented by LLMs.
 
 #### Step 1: Query Expansion (QE)
 The raw query $q$ is often underspecified or requires domain knowledge to map to relevant terms in $\mathcal{C}$. An LLM is used to generate an expanded query $q_{exp}$:
@@ -89,12 +94,12 @@ $$q_{exp} = \text{LLM}_{\theta}(q)$$
 
 This expansion adds context, uncovers implicit constraints, and generates keywords that are statistically likely to appear in $\mathcal{D}^*$.
 
-#### Step 2: Initial Retrieval (BM25)
-We use the BM25 (Best Matching 25) algorithm for the initial retrieval stage. BM25 is a probabilistic retrieval framework based on TF-IDF (Term Frequency-Inverse Document Frequency). It scores documents based on the frequency of query terms in the document relative to their frequency across the entire corpus, with normalization for document length.
+#### Step 2: Retrieval (BM25)
+We use the BM25 (Best Matching 25) algorithm for the retrieval stage. When augmented with expanded queries BM25, BRIGHT paper shows that BM25 gets very strong results even outperforming best off-the-shelf dual encoder models. BM25 is a probabilistic retrieval framework based on TF-IDF (Term Frequency-Inverse Document Frequency). It scores documents based on the frequency of query terms in the document relative to their frequency across the entire corpus, with normalization for document length.
 Given $q_{exp}$, BM25 retrieves an initial candidate list $\mathcal{L}_{init} = \{d_1, d_2, ..., d_N\}$ sorted by lexical relevance.
 
 #### Step 3: LLM-based Reranking (RR)
-The top-$k$ documents from $\mathcal{L}_{init}$ are passed to an LLM for re-ordering. In our setup, we employ a list-wise reranking approach rather than a point-wise scoring function. The LLM receives the query and the concatenated text of the top-$k$ candidates as a single prompt. It is instructed to reason over the set and output the identifiers of the top 10 most relevant documents in descending order:
+The top-$k$ documents from $\mathcal{L}_{init}$ are passed to an LLM for re-ordering. Similar to standard practices for BRIGHT benchmark, we employ a list-wise reranking approach. The LLM receives the query and the concatenated text of the top-$k$ candidates as a single prompt. It is instructed to reason over the set and output the identifiers of the top 10 most relevant documents in descending order:
 
 
 $$\pi_{top10} = \text{LLM}_{\phi}(q, \{d_1, ..., d_k\})$$
@@ -109,29 +114,48 @@ We leverage the Gemini 2.5 family's ability to perform inference-time compute sc
 ## Experimental Setup
 To isolate the impact of compute allocation, we fix our retrieval algorithm to BM25 (using the Pyserini implementation) and vary the LLM components used for Query Expansion and Reranking.
 
-#### Model Suite
+### Model Suite
 We utilize the Google Gemini 2.5 family to represent a spectrum of cost and capability. We categorize them as follows:
 
-- Gemini-2.5-Flash-Lite: A highly efficient, low-latency model (No-Thinking mode only).
-- Gemini-2.5-Flash (No-Think): A standard mid-sized model (Thinking features disabled).
-- Gemini-2.5-Flash (Think): The same mid-sized model with dynamic thinking enabled, allowing for extended reasoning tokens.
-- Gemini-2.5-Pro: A large, high-capacity model (Thinking mode enabled).
+- `Gemini-2.5-Flash-Lite`: A highly efficient, low-latency model (No-Thinking mode only).
+- `Gemini-2.5-Flash (No-Think)`: A standard mid-sized model (Thinking features disabled).
+- `Gemini-2.5-Flash (Think)`: The same mid-sized model with dynamic thinking enabled, allowing for extended reasoning tokens.
+- `Gemini-2.5-Pro`: A large, high-capacity model (Thinking mode enabled).
 
-#### Evaluation Metrics
+### Evaluation Metrics
 - Quality: We report NDCG@10 for ranking quality and Recall@100 to assess the retrieval ceiling.
 - Performance: We measure Cost per Sample ($) and Time per Sample (ms) to visualize the trade-offs.
 
-## Experiments
 We structure our analysis into two primary phases:
+
+## Experiments
 
 ### Scaling Compute in Query Expansion (QE)
 We first evaluate the impact of the generator's strength on the initial retrieval stage.
 
-- Protocol: For every query q in the BRIGHT subsets, we generate q_{exp} using the four model variants (Flash-Lite, Flash-No-Think, Flash-Think, Pro).
-- Retrieval: We perform BM25 retrieval using q_{exp}.
+- Protocol: For every query q in the BRIGHT subsets, we generate $q_{exp}$ using the four model variants (Flash-Lite, Flash-No-Think, Flash-Think, Pro).
+- Retrieval: We perform BM25 retrieval using $q_{exp}$.
 - Objective: To determine if "smarter" queries (generated by more expensive models) lead to higher Recall@100, providing a better candidate set for the reranker.
 
-<div class="l-page">
+| Query Expansion Model | Avg NDCG@10 | Avg Recall@100 | Avg Cost per Query ($) 
+|----------------------|-------------|----------------|------------------------|
+| No QE (BM25 only)    | -         | -            | 0.000                 
+| Flash-Lite           | 28.87         | 57.19            | 0.0018                    
+| Flash (No-Think)     | 29.63         | 58.56            | 0.0093
+| Flash (Think)        | 30.23         | 57.73            | 0.0141
+| Pro                  | 30.01         | 58.01            | 0.0489
+
+**Key Observations:**
+- Query expansion provides consistent but modest gains in recall, with diminishing returns beyond Flash-No-Think.
+- The cost increase from Flash-Lite to Pro is substantial (27x), while the recall improvement is marginal (~1-2%).
+- Thinking mode in Flash adds cost but does not significantly improve recall in the QE stage.
+
+<figure>
+  <img src="{{ '/assets/html/2026-04-27-trade-offs-in-llm-compute-for-reasoning-intensive-information-retrieval/qe_tradeoff_radar_chart.png' | relative_url }}" alt="Query Expansion Trade-offs" style="width: 100%; max-width: 600px; display: block; margin: 0 auto;">
+    <figcaption style="text-align: center;">Cost-performance trade-offs across different query expansion strategies.</figcaption>
+</figure>
+
+<div class="c-page">
   <iframe id="ndcg-iframe" src="{{ '/assets/html/2026-04-27-trade-offs-in-llm-compute-for-reasoning-intensive-information-retrieval/cost_vs_ndcg.html' | relative_url }}" frameborder='0' scrolling='no' width="100%" style="border: 0; overflow: hidden; display: block; height: 1px;"></iframe>
 </div>
 
@@ -153,6 +177,12 @@ Setup:
 - Retrieval Basis: All four QE settings from Phase 1.
 - Reranking Depth: Fixed at k=100.
 - Comparison: We measure the performance delta between Gemini-2.5-Flash (Think) and Gemini-2.5-Flash (No-Think).
+
+| Reranker Model | Avg NDCG@10 | Avg Recall@100 | Avg Cost per Query ($) | Avg Latency per Query (ms) |
+|----------------|-------------|----------------|------------------------|----------------------------|
+| Flash (No-Think) | TBD       | TBD            | TBD                    | TBD                        |
+| Flash (Think)    | TBD       | TBD            | TBD                    | TBD                        |
+
 #### Impact of Model Strength in Reranking
 
 Hypothesis: Stronger base models (Pro) outperform optimized smaller models (Flash), even when the smaller models utilize thinking.
@@ -161,6 +191,38 @@ Setup:
 - Reranking Depth: Fixed at k=100.
 - Variable: We compare the four ranking models: Flash-Lite, Flash-No-Think, Flash-Think, and Pro.
 [Placeholder: We will insert a diagram here illustrating the matrix of experiments: QE variations on the X-axis vs. RR variations on the Y-axis.]
+
+<div class="c-page">
+  <iframe id="pipeline-3d-iframe" src="{{ '/assets/html/2026-04-27-trade-offs-in-llm-compute-for-reasoning-intensive-information-retrieval/figure_3d_scatter_pipeline.html' | relative_url }}" frameborder='0' scrolling='yes' width="100%" style="border: 0; display: block; min-height: 600px; height: 1px;"></iframe>
+</div>
+
+<script>
+(function() {
+  function resizePipelineIframe() {
+    var iframe = document.getElementById('pipeline-3d-iframe');
+    if (!iframe) return;
+    try {
+      var doc = iframe.contentDocument || (iframe.contentWindow && iframe.contentWindow.document);
+      if (!doc) return;
+      var newHeight = Math.max(
+        doc.body ? doc.body.scrollHeight : 0,
+        doc.documentElement ? doc.documentElement.scrollHeight : 0
+      );
+      if (newHeight && newHeight !== parseInt(iframe.style.height, 10)) {
+        iframe.style.height = newHeight + 'px';
+      }
+    } catch (e) {
+      // cross-origin guard (should not happen for same-site embeds)
+    }
+  }
+  // Resize on key lifecycle events
+  window.addEventListener('load', resizePipelineIframe);
+  window.addEventListener('resize', function() { setTimeout(resizePipelineIframe, 100); });
+  document.addEventListener('DOMContentLoaded', resizePipelineIframe);
+  var el = document.getElementById('pipeline-3d-iframe');
+  if (el) el.addEventListener('load', resizePipelineIframe);
+})();
+</script>
 
 <script>
 (function() {
