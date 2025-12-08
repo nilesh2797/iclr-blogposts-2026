@@ -152,7 +152,7 @@ The table below presents our findings across all query expansion strategies. We 
 
 The interactive visualization below shows the cost vs. NDCG@10 trade-off for different query expansion models across various BRIGHT domains (apps, biology, earth_science, economics, leetcode, pony, psychology, robotics, stackoverflow, and sustainability_living). Each point represents a specific domain-model combination, color-coded by the model used and shaped by the task domain. Hover over points to see detailed metrics.
 
-<iframe src="{{ '/assets/html/2026-04-27-trade-offs-in-llm-compute-for-reasoning-intensive-information-retrieval/cost_vs_ndcg_model.html' | relative_url }}" width="800" height="600px" frameborder="0"></iframe>
+<iframe src="{{ '/assets/html/2026-04-27-trade-offs-in-llm-compute-for-reasoning-intensive-information-retrieval/cost_vs_ndcg_model1.html' | relative_url }}" width="800" height="600px" frameborder="0"></iframe>
 
 #### Efficiency Analysis
 
