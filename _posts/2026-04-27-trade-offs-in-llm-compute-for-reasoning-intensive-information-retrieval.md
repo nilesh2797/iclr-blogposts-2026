@@ -1,6 +1,6 @@
 ---
 layout: distill
-title: Allocating "System 2" Logic Trade-offs in LLM Compute for Reasoning-Intensive Information Retrieval
+title: Trade-offs in LLM Compute for Reasoning-Intensive Information Retrieval
 
 description: This is some random description
 date: 2026-04-27
@@ -27,7 +27,7 @@ authors:
 #       name: IAS, Princeton
 
 # must be the exact same name as your blogpost
-bibliography: 2026-04-27-distill-example.bib
+bibliography: 2026-04-27-trade-offs-in-llm-compute-for-reasoning-intensive-information-retrieval.bib
 
 # Add a table of contents to your post.
 #   - make sure that TOC names match the actual section names
@@ -135,7 +135,7 @@ Variable: We compare the four ranking models: Flash-Lite, Flash-No-Think, Flash-
 [Placeholder: We will insert a diagram here illustrating the matrix of experiments: QE variations on the X-axis vs. RR variations on the Y-axis.]
 
 <div class="l-page">
-  <iframe id="ndcg-iframe" src="{{ '/assets/html/2026-04-27-cost-in-reasoning-retrieval/cost_vs_ndcg.html' | relative_url }}" frameborder='0' scrolling='no' width="100%" style="border: 0; overflow: hidden; display: block; height: 1px;"></iframe>
+  <iframe id="ndcg-iframe" src="{{ '/assets/html/2026-04-27-trade-offs-in-llm-compute-for-reasoning-intensive-information-retrieval/cost_vs_ndcg.html' | relative_url }}" frameborder='0' scrolling='no' width="100%" style="border: 0; overflow: hidden; display: block; height: 1px;"></iframe>
 </div>
 
 <script>
