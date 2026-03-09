@@ -7,24 +7,18 @@ date: 2026-04-27
 future: true
 htmlwidgets: true
 
-# anonymize when submitting
-authors:
-  - name: Anonymous
-
 # do not fill this in until your post is accepted and you're publishing your camera-ready post!
-# authors:
-#   - name: Albert Einstein
-#     url: "https://en.wikipedia.org/wiki/Albert_Einstein"
-#     affiliations:
-#       name: IAS, Princeton
-#   - name: Boris Podolsky
-#     url: "https://en.wikipedia.org/wiki/Boris_Podolsky"
-#     affiliations:
-#       name: IAS, Princeton
-#   - name: Nathan Rosen
-#     url: "https://en.wikipedia.org/wiki/Nathan_Rosen"
-#     affiliations:
-#       name: IAS, Princeton
+authors:
+  - name: Sreeja Apparaju
+    affiliations:
+      name: Independent Researcher
+      email: sapparaju23@gmail.com
+  - name: Nilesh Gupta
+    url: "https://nilesh2797.github.io/"
+    affiliations:
+      name: UT Austin
+      email: nilesh@cs.utexas.edu
+
 
 # must be the exact same name as your blogpost
 bibliography: 2026-04-27-trade-offs-in-llm-compute-for-reasoning-intensive-information-retrieval.bib
@@ -48,6 +42,10 @@ toc:
       - name: Scaling Compute in Query Expansion (QE)
       - name: Scaling Compute in Reranking (RR)
   - name: Conclusion
+  - name: Appendix
+    subsections:
+      - name: A. Prompt Templates
+  
 ---
 
 ## Introduction
@@ -257,3 +255,38 @@ As Reasoning-Intensive Information Retrieval (RIIR) becomes central to modern se
 1. **Query Expansion is a Low-hanging, High-Efficiency Step**: Investing in Query Expansion yields immediate returns by bridging the vocabulary gap between user queries and documents. However, this utility saturates quickly. Moving from Flash-Lite to Flash (No-Think) provides a necessary recall boost, but throwing "Pro-level" compute or "Thinking" models at query formulation offers negligible gains. For most systems, a mid-tier standard model is the optimal stopping point for QE.
 2. **Reranking is the Primary Quality Driver**: The bulk of the "reasoning" in RIIR happens during the validation of candidates, not their retrieval. Our experiments show that reranking depth ($k$) and model strength are the most reliable levers for performance. Increasing the candidate pool from 10 to 100 linearly scales costs but consistently delivers significantly higher NDCG, allowing the system to surface "needle-in-a-haystack" answers that simpler retrievers miss.
 3. **The "Thinking" Trap**: Perhaps most surprisingly, inference-time "thinking" (dynamic CoT) proved to be an inefficient allocation of resources for this specific workload. In both QE and Reranking, the marginal quality gains from Thinking modes did not justify their substantial latency and cost penalties.
+
+## Appendix 
+
+### Prompt Templates
+
+Our pipeline uses two LLM prompting stages: Query Expansion (QE) and Reranking (RR). Below we provide the exact prompt templates used in all experiements. These prompts are adapted from the original BRIGHT repository ([https://github.com/xlang-ai/BRIGHT](https://github.com/xlang-ai/BRIGHT)).
+
+#### Query Expansion Prompt
+For query expansion, each raw query from the BRIGHT dataset (referred to as `cur_post`) is passed to the LLM with the following template:
+
+```
+{curr_post}
+
+Instructions:
+1. Identify the essential problem.
+2. Think step by step to reason and describe what information could be relevant and helpful to address the question in detail
+3. Draft an answer with as many thoughts as you have. 
+```
+
+#### Reranking Prompt
+For list-wise reranking, the LLM receives the query alongside a formatted string of candidate documents (`doc_string`), where each document is prefixed with a numeric identifier. The prompt template is:
+
+```
+The following passages are related to query: {curr_query}
+
+{doc_string}
+First identify the essential problem in the query.
+Think step by step to reason about why each document is relevant or irrelevant.
+Rank these passages based on their relevance to the qeury.
+Please output the ranking result of passages as a list, where the first element is the id of the most relevant passage, the second element is the id of the second most element, etc.
+Please strictly follow the format to output a list of {topk} ids corresponding to the most relevant {topk} passages:
+```json
+[...]
+```
+```
