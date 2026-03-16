@@ -245,7 +245,7 @@ Our final experiment examines whether investing in a stronger base model for rer
 
 2. **Pro Delivers the Highest Quality**: The Pro model achieves 41.19 NDCG@10, outperforming Flash-Think by ~3.2% (39.92 → 41.19). This is a more substantial gap than we observed in query expansion, indicating that reranking benefits more from model capacity.
 
-3. **Reranking Cost Dominates Total Cost**: In the Pro configuration, reranking accounts for the vast majority of total pipeline cost at $0.17/query — roughly 8x more expensive than the Flash-Lite configuration ($0.021/query).
+3. **Reranking Cost Dominates Total Cost**: In the Pro configuration, reranking accounts for the vast majority of total pipeline cost at \$0.17/query, roughly 8x more expensive than the Flash-Lite configuration (\$0.021/query).
 
 4. **The Cost-Quality Frontier**: Moving from Flash-Think to Pro costs ~3.1x more ($0.054 → $0.17) for a ~3.2% quality gain (39.92 → 41.19). Whether this is worthwhile depends on the application's value function for accuracy improvements.
 
